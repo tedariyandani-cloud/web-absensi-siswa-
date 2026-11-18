@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aplikasi Absensi & Laporan Pengajar</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style type="text/tailwindcss">
+  @layer base {
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      background-image: radial-gradient(#cbd5e1 0.9px, transparent 0.9px);
+      background-size: 22px 22px;
+    }
+  }
+  @layer components {
+    .inp {
+      @apply w-full px-3.5 py-2.5 bg-white/95 border border-slate-200 rounded-xl text-sm shadow-xs transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 hover:border-slate-300;
+    }
+    .lbl {
+      @apply block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5;
+    }
+    .btn {
+      @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 cursor-pointer;
+    }
+    .card {
+      @apply bg-white/95 backdrop-blur-xs border border-slate-200/80 rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden transition-all duration-300;
+    }
+    .ico {
+      @apply w-11 h-11 rounded-2xl text-white flex items-center justify-center shadow-md shrink-0;
+    }
+  }
+  @keyframes floatSlow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(3deg); }
+  }
+  @keyframes floatReverse {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(6px) rotate(-3deg); }
+  }
+  @keyframes pulseSoft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .animate-float { animation: floatSlow 4.5s ease-in-out infinite; }
+  .animate-float-delay { animation: floatReverse 5.2s ease-in-out 1s infinite; }
+  .animate-pulse-soft { animation: pulseSoft 3.5s ease-in-out infinite; }
+</style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-700">
+<div id="toast-box" class="fixed top-4 right-4 z-[80] space-y-2 pointer-events-none"></div>
+
+<!-- ==================== HALAMAN LOGIN ==================== -->
+<div id="login-container" class="relative flex items-center justify-center min-h-screen p-4 overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600">
+  <!-- Ornamen Latar Belakang Login -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-24 -left-24 w-80 h-80 bg-white/10 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-10 -right-16 w-80 h-80 bg-amber-300/20 rounded-full blur-3xl"></div>
+    <!-- Awan Dekoratif Kiri Atas -->
+    <svg class="absolute top-14 left-10 w-24 h-14 text-white/15 animate-float" viewBox="0 0 64 36" fill="currentColor">
+      <path d="M18 32h30a10 10 0 0 0 1-19.95A14 14 0 0 0 22 10a11 11 0 0 0-4 22z"/>
+    </svg>
+    <!-- Bintang Kanan Atas -->
+    <svg class="absolute top-20 right-16 w-12 h-12 text-amber-300/45 animate-float-delay" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z"/>
+    </svg>
+    <!-- Buku Kiri Bawah -->
+    <svg class="absolute bottom-16 left-16 w-14 h-14 text-emerald-300/35 animate-float-delay" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    </svg>
+    <!-- Awan Kanan Bawah -->
+    <svg class="absolute bottom-20 right-14 w-28 h-16 text-pink-200/20 animate-float" viewBox="0 0 64 36" fill="currentColor">
+      <path d="M18 32h30a10 10 0 0 0 1-19.95A14 14 0 0 0 22 10a11 11 0 0 0-4 22z"/>
+    </svg>
+  </div>
+
+  <div class="relative bg-white/95 backdrop-blur-md w-full max-w-md p-8 rounded-3xl shadow-2xl border border-white/40">
+    <!-- Lencana Ilustrasi Topi Wisuda di Atas Kartu Login -->
+    <div class="flex justify-center mb-5">
+      <div class="relative">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-400 to-rose-500 text-white flex items-center justify-center shadow-xl shadow-orange-500/30 animate-pulse-soft">
+          <svg class="w-11 h-11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-emerald-400 text-white flex items-center justify-center text-xs shadow-md">
+          <i class="fa-solid fa-sparkles"></i>
+        </span>
+      </div>
+    </div>
+
+    <div class="text-center mb-6">
+      <span class="inline-block px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold tracking-wide mb-2">✨ Ruang Kerja Pengajar</span>
+      <h1 class="text-2xl font-extrabold text-slate-800">Portal Absensi & Laporan</h1>
+      <p class="text-sm text-slate-500 mt-1">Masuk untuk mengelola kelas, progres materi, dan laporan.</p>
+    </div>
+
+    <form onsubmit="handleLogin(event)" class="space-y-4">
+      <div>
+        <label class="lbl"><i class="fa-solid fa-envelope text-indigo-500 mr-1"></i> Email / Username</label>
+        <input type="email" id="login-email" required value="admin@sekolah.com" class="inp" placeholder="email@sekolah.com">
+      </div>
+      <div>
+        <label class="lbl"><i class="fa-solid fa-lock text-indigo-500 mr-1"></i> Password</label>
+        <div class="relative">
+          <input type="password" id="login-password" required value="admin123" class="inp pr-10" placeholder="••••••••">
+          <button type="button" onclick="togglePassVisibility('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 cursor-pointer">
+            <i class="fa-solid fa-eye text-sm"></i>
+          </button>
+        </div>
+      </div>
+      <button class="btn w-full py-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-base mt-2">
+        <span>Masuk ke Kelas</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </form>
+
+    <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 text-xs text-slate-400">
+      <span>Default: <strong class="text-slate-600">admin@sekolah.com</strong> / <strong class="text-slate-600">admin123</strong></span>
+      <button type="button" onclick="promptResetAccount()" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">
+        <i class="fa-solid fa-rotate-left mr-1"></i>Reset Akun
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== APLIKASI UTAMA ==================== -->
+<div id="app-container" class="hidden flex-col min-h-screen">
+  <!-- HEADER CERIA DENGAN ORNAMEN -->
+  <header class="sticky top-0 z-30 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-500/20 overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none opacity-15">
+      <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1200 120" fill="none">
+        <circle cx="80" cy="20" r="45" fill="white"/>
+        <circle cx="1120" cy="95" r="65" fill="white"/>
+        <path d="M300 10 L310 30 L330 32 L315 46 L319 66 L300 56 L281 66 L285 46 L270 32 L290 30 Z" fill="white"/>
+        <path d="M880 25 L887 40 L903 42 L891 53 L894 69 L880 61 L866 69 L869 53 L857 42 L873 40 Z" fill="white"/>
+      </svg>
+    </div>
+
+    <div class="relative max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center gap-3">
+      <div class="flex items-center gap-3.5 min-w-0">
+        <!-- Maskot Buku Tersenyum Melayang -->
+        <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs border border-white/30 flex items-center justify-center shadow-inner shrink-0 animate-float">
+          <svg class="w-7 h-7 text-amber-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M10 10h.01M15 10h.01"/>
+            <path d="M10 14c1 1.2 4 1.2 5 0"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h2 id="header-teacher-name" class="font-extrabold text-base sm:text-lg truncate">Nama Pengajar</h2>
+            <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-400/25 text-amber-100 border border-amber-300/30">
+              <i class="fa-solid fa-star text-[9px] text-amber-300"></i> Aktif
+            </span>
+          </div>
+          <p id="header-branch" class="text-xs text-indigo-100 truncate mt-0.5"><i class="fa-solid fa-location-dot mr-1 text-pink-200"></i>Cabang: -</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="openProfileModal()" class="px-3.5 py-2 text-xs sm:text-sm font-bold bg-white/15 hover:bg-white/25 border border-white/25 rounded-xl backdrop-blur-xs transition cursor-pointer flex items-center gap-1.5">
+          <i class="fa-solid fa-user-gear text-amber-200"></i>
+          <span>Profil & Akun</span>
+        </button>
+        <button onclick="handleLogout()" class="px-3.5 py-2 text-xs sm:text-sm font-bold bg-rose-500 hover:bg-rose-600 rounded-xl shadow-md transition cursor-pointer flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span class="hidden sm:inline">Keluar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto px-4 py-6 space-y-6 flex-grow">
+
+    <!-- BANNER SAPAAN CERIA -->
+    <div class="relative rounded-3xl bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border border-indigo-100/80 p-5 sm:p-6 shadow-sm overflow-hidden">
+      <svg class="hidden sm:block absolute right-6 bottom-0 w-40 h-28 text-indigo-500/15 pointer-events-none" viewBox="0 0 160 120" fill="currentColor">
+        <circle cx="115" cy="72" r="45"/>
+        <circle cx="60" cy="88" r="30"/>
+        <path d="M125 14 L129 24 L140 25 L132 32 L134 43 L125 37 L116 43 L118 32 L110 25 L121 24 Z" fill="#f59e0b" fill-opacity="0.55"/>
+        <path d="M42 22 L45 29 L52 30 L47 35 L48 42 L42 38 L36 42 L37 35 L32 30 L39 29 Z" fill="#ec4899" fill-opacity="0.45"/>
+      </svg>
+      <div class="relative">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-indigo-600 text-xs font-bold shadow-xs border border-indigo-100 mb-2">
+          <span>🎒</span> Semangat Mengajar Hari Ini!
+        </span>
+        <h1 id="welcome-greeting" class="text-xl sm:text-2xl font-extrabold text-slate-800">Halo, Kak Pengajar! 👋</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">Pantau progres belajar tiap murid, catat sesi 90 menit otomatis, dan unduh laporan bulanan dengan rapi.</p>
+      </div>
+    </div>
+
+    <!-- 4 KARTU STATISTIK CERIA & BACKUP/RESTORE JSON -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Kartu 1: Total Kelas -->
+      <div class="rounded-3xl p-5 bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/20 flex items-center gap-4 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0">
+          <i class="fa-solid fa-chalkboard"></i>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-indigo-100 uppercase tracking-wider">Total Kelas</p>
+          <h4 id="stat-total-class" class="text-2xl font-extrabold mt-0.5">0</h4>
+        </div>
+      </div>
+
+      <!-- Kartu 2: Total Siswa -->
+      <div class="rounded-3xl p-5 bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 flex items-center gap-4 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-emerald-100 uppercase tracking-wider">Total Siswa</p>
+          <h4 id="stat-total-student" class="text-2xl font-extrabold mt-0.5">0</h4>
+        </div>
+      </div>
+
+      <!-- Kartu 3: Total Pertemuan -->
+      <div class="rounded-3xl p-5 bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20 flex items-center gap-4 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-amber-100 uppercase tracking-wider">Total Pertemuan</p>
+          <h4 id="stat-total-meeting" class="text-2xl font-extrabold mt-0.5">0</h4>
+        </div>
+      </div>
+
+      <!-- Kartu 4: Backup & Restore JSON -->
+      <div class="rounded-3xl p-5 bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/20 flex flex-col justify-between gap-2.5 relative overflow-hidden">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-base shrink-0">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <p class="text-xs font-extrabold uppercase tracking-wider">Backup Data</p>
+            <p class="text-[11px] text-rose-100">Cadangkan / Pulihkan (.json)</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button type="button" onclick="exportBackupJSON()" class="px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+            <i class="fa-solid fa-download"></i> Backup
+          </button>
+          <label class="px-2.5 py-1.5 rounded-xl bg-white text-rose-600 hover:bg-rose-50 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs">
+            <i class="fa-solid fa-upload"></i> Restore
+            <input type="file" accept=".json,application/json" onchange="importBackupJSON(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== LACI 1: DATA SISWA & EDIT MATERI INDIVIDUAL ==================== -->
+    <section class="card border-t-4 border-t-indigo-500">
+      <button onclick="toggleDrawer('drawer-1')" class="w-full px-5 py-4 flex justify-between items-center text-left hover:bg-indigo-50/40 transition cursor-pointer">
+        <div class="flex items-center gap-3.5">
+          <div class="ico bg-gradient-to-br from-indigo-500 to-blue-600">
+            <i class="fa-solid fa-users text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-slate-800">Data Siswa & Edit Materi Individual</h3>
+              <span class="hidden sm:inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">Materi Per Murid</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola kelas, siswa, dan ubah materi terakhir masing-masing siswa secara individual.</p>
+          </div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+          <i id="icon-drawer-1" class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+        </div>
+      </button>
+
+      <div id="drawer-1" class="px-5 pb-6 pt-4 border-t border-slate-100 space-y-6">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-blue-50/90 border border-indigo-100 shadow-xs">
+            <label class="lbl text-indigo-800"><i class="fa-solid fa-chalkboard-user mr-1"></i> Buat Kelas Baru</label>
+            <div class="flex gap-2">
+              <input id="new-class-name" placeholder="Contoh: Kelas 5 SD A" class="inp" onkeydown="if(event.key==='Enter')addClass()">
+              <button type="button" onclick="addClass()" class="btn bg-gradient-to-r from-indigo-600 to-blue-600 whitespace-nowrap">
+                <i class="fa-solid fa-plus"></i>Kelas
+              </button>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/90 to-teal-50/90 border border-emerald-100 shadow-xs space-y-2.5">
+            <label class="lbl text-emerald-800"><i class="fa-solid fa-user-graduate mr-1"></i> Tambah Siswa ke Kelas</label>
+            <select id="select-class-target" class="inp"></select>
+            <div class="flex gap-2">
+              <input id="new-student-name" placeholder="Nama lengkap siswa" class="inp" onkeydown="if(event.key==='Enter')addStudent()">
+              <button type="button" onclick="addStudent()" class="btn bg-gradient-to-r from-emerald-600 to-teal-600 whitespace-nowrap">
+                <i class="fa-solid fa-user-plus"></i>Siswa
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="student-list-container" class="space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- ==================== LACI 2: ABSEN HARIAN MENGAJAR (SESI 90 MENIT) ==================== -->
+    <section class="card border-t-4 border-t-emerald-500">
+      <button onclick="toggleDrawer('drawer-2')" class="w-full px-5 py-4 flex justify-between items-center text-left hover:bg-emerald-50/40 transition cursor-pointer">
+        <div class="flex items-center gap-3.5">
+          <div class="ico bg-gradient-to-br from-emerald-500 to-teal-600">
+            <i class="fa-solid fa-calendar-check text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-slate-800">Absen Harian Mengajar</h3>
+              <span class="hidden sm:inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">Sesi 90 Menit</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Jam selesai otomatis +90 menit, deteksi bentrok jadwal, serta materi khusus tiap siswa.</p>
+          </div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+          <i id="icon-drawer-2" class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+        </div>
+      </button>
+
+      <div id="drawer-2" class="px-5 pb-6 pt-4 border-t border-slate-100">
+        <form onsubmit="handleSaveAttendance(event)" class="space-y-4">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><label class="lbl">Tanggal</label><input type="date" id="input-date" required class="inp"></div>
+            <div><label class="lbl">Cabang</label><input id="input-branch" required placeholder="Contoh: Kalibaru" class="inp"></div>
+            <div><label class="lbl">Jam Mulai</label><input type="time" id="input-time" required oninput="updateEndTime()" class="inp"></div>
+            <div><label class="lbl">Jam Selesai (+90 mnt)</label><input id="input-time-end" readonly placeholder="--:--" class="inp !bg-emerald-50 !border-emerald-200 font-extrabold text-emerald-700"></div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="lbl">Kelas</label>
+              <select id="input-class-select" onchange="renderAttendanceStudents()" class="inp"></select>
+            </div>
+            <div>
+              <label class="lbl">Materi Utama Kelas</label>
+              <input id="input-material" required oninput="syncMainMaterialToInputs()" placeholder="Contoh: Pecahan desimal dan latihan" class="inp">
+            </div>
+          </div>
+
+          <div id="dynamic-attendance-box" class="hidden rounded-2xl p-4 bg-gradient-to-br from-slate-50 via-indigo-50/40 to-emerald-50/40 border border-slate-200/90 shadow-xs space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-list text-indigo-600"></i>
+                <span>Kehadiran & Materi Khusus Siswa</span>
+              </h4>
+              <span class="text-[11px] text-slate-500 bg-white px-2.5 py-1 rounded-full border border-slate-200">
+                💡 Ubah kolom materi di sebelah kanan siswa jika ia belajar materi berbeda hari ini
+              </span>
+            </div>
+            <div id="attendance-student-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+          </div>
+
+          <div>
+            <label class="lbl">Catatan Tambahan (Opsional)</label>
+            <textarea id="input-notes" rows="2" placeholder="Kondisi kelas, tugas/PR, atau catatan perkembangan belajar..." class="inp"></textarea>
+          </div>
+
+          <button class="btn w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-base">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Absen Hari Ini
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================== LACI 3: LAPORAN BULANAN, EDIT/HAPUS RIWAYAT & EKSPOR ==================== -->
+    <section class="card border-t-4 border-t-rose-500">
+      <button onclick="toggleDrawer('drawer-3')" class="w-full px-5 py-4 flex justify-between items-center text-left hover:bg-rose-50/40 transition cursor-pointer">
+        <div class="flex items-center gap-3.5">
+          <div class="ico bg-gradient-to-br from-rose-500 to-pink-600">
+            <i class="fa-solid fa-file-excel text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-slate-800">Laporan Bulanan, Edit Riwayat & Ekspor</h3>
+              <span class="hidden sm:inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-700">Excel & WhatsApp</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Filter rentang tanggal, edit atau hapus riwayat pertemuan, unduh Excel, dan kirim laporan ke WA.</p>
+          </div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+          <i id="icon-drawer-3" class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+        </div>
+      </button>
+
+      <div id="drawer-3" class="px-5 pb-6 pt-4 border-t border-slate-100 space-y-4">
+        <div class="flex flex-col md:flex-row items-end gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/90 to-pink-50/90 border border-rose-100 shadow-xs">
+          <div class="w-full"><label class="lbl text-rose-800">Tanggal Mulai</label><input type="date" id="report-start" class="inp"></div>
+          <div class="w-full"><label class="lbl text-rose-800">Tanggal Selesai</label><input type="date" id="report-end" class="inp"></div>
+          <button type="button" onclick="generateReport()" class="btn bg-gradient-to-r from-rose-500 to-pink-600 whitespace-nowrap w-full md:w-auto">
+            <i class="fa-solid fa-filter"></i> Tampilkan
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="button" onclick="exportToExcel()" class="btn bg-gradient-to-r from-emerald-600 to-green-600">
+            <i class="fa-solid fa-file-excel"></i> Unduh Excel (.xlsx)
+          </button>
+          <button type="button" onclick="sendToWhatsApp()" class="btn bg-gradient-to-r from-green-500 to-emerald-500">
+            <i class="fa-brands fa-whatsapp text-lg"></i> Kirim ke WhatsApp
+          </button>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 overflow-hidden shadow-md bg-white">
+          <div id="report-header-title" class="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white text-center font-bold py-3.5 px-3 text-sm">Absen</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="bg-indigo-50/80 text-indigo-900 border-b border-indigo-100 text-xs uppercase tracking-wider">
+                  <th class="p-3 text-center">Tanggal</th>
+                  <th class="p-3 text-center">Hari</th>
+                  <th class="p-3 text-center">Jam</th>
+                  <th class="p-3 text-center">Cabang</th>
+                  <th class="p-3 text-left">Materi / Kelas</th>
+                  <th class="p-3 text-center w-24">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="report-table-body"></tbody>
+            </table>
+          </div>
+          <div id="report-footer-total" class="bg-gradient-to-r from-emerald-50 to-teal-50 font-extrabold text-center py-3.5 text-emerald-800 border-t border-emerald-100 text-sm">Total terdapat 0 meeting</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center py-5 text-xs text-slate-400">
+    Portal Absensi & Laporan Pengajar • Dibuat ceria untuk mendukung kegiatan belajar mengajar ✨
+  </footer>
+</div>
+
+<!-- ==================== MODAL PROFIL & KEAMANAN AKUN ==================== -->
+<div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden my-auto">
+    <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white flex justify-between items-center">
+      <h3 class="font-extrabold text-lg flex items-center gap-2"><i class="fa-solid fa-user-gear text-amber-300"></i> Profil & Keamanan Akun</h3>
+      <button type="button" onclick="hide('profile-modal')" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form onsubmit="handleSaveProfile(event)" class="p-6 space-y-4">
+      <div><label class="lbl">Nama Lengkap Pengajar</label><input id="profile-name" required class="inp"></div>
+      <div><label class="lbl">Cabang Tetap</label><input id="profile-branch" required class="inp"></div>
+      <div><label class="lbl">Email / Username Login</label><input type="email" id="profile-email" required class="inp"></div>
+      <div>
+        <label class="lbl">Password Baru (Opsional, min. 6 karakter)</label>
+        <div class="relative">
+          <input type="password" id="profile-password" placeholder="Kosongkan jika tidak diubah" class="inp pr-10">
+          <button type="button" onclick="togglePassVisibility('profile-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 cursor-pointer">
+            <i class="fa-solid fa-eye text-sm"></i>
+          </button>
+        </div>
+      </div>
+      <div><label class="lbl">Nomor WhatsApp (628xxxxxxxxxx)</label><input id="profile-phone" required placeholder="6281234567890" class="inp"></div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="hide('profile-modal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-600 cursor-pointer">Batal</button>
+        <button class="btn bg-gradient-to-r from-indigo-600 to-violet-600"><i class="fa-solid fa-check"></i> Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL EDIT MATERI SISWA ==================== -->
+<div id="edit-student-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 items-center justify-center p-4">
+  <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+    <div class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-blue-600 text-white flex justify-between items-center">
+      <h3 class="font-extrabold text-base flex items-center gap-2"><i class="fa-solid fa-book-open-reader"></i> Edit Materi Siswa</h3>
+      <button type="button" onclick="hide('edit-student-modal')" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form onsubmit="saveStudentMaterial(event)" class="p-6 space-y-4">
+      <input type="hidden" id="edit-cls-name">
+      <input type="hidden" id="edit-stu-idx">
+      <div><label class="lbl">Nama Siswa</label><input id="edit-stu-name" readonly class="inp !bg-slate-100 font-bold text-slate-700"></div>
+      <div><label class="lbl">Materi Terakhir</label><input id="edit-stu-mat" required placeholder="Contoh: Perkalian Pecahan" class="inp"></div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="hide('edit-student-modal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-600 cursor-pointer">Batal</button>
+        <button class="btn bg-gradient-to-r from-indigo-600 to-blue-600"><i class="fa-solid fa-floppy-disk"></i> Simpan Materi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL EDIT PERTEMUAN / ABSEN ==================== -->
+<div id="edit-log-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden my-auto">
+    <div class="px-6 py-4 bg-gradient-to-r from-rose-500 to-pink-600 text-white flex justify-between items-center">
+      <h3 class="font-extrabold text-base flex items-center gap-2"><i class="fa-solid fa-pen-to-square"></i> Edit Pertemuan / Absen</h3>
+      <button type="button" onclick="hide('edit-log-modal')" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form onsubmit="saveEditedLog(event)" class="p-6 space-y-4">
+      <input type="hidden" id="edit-log-id">
+      <div class="grid grid-cols-2 gap-3.5">
+        <div><label class="lbl">Tanggal</label><input type="date" id="el-date" required class="inp"></div>
+        <div><label class="lbl">Cabang</label><input id="el-branch" required class="inp"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3.5">
+        <div><label class="lbl">Jam Mulai</label><input type="time" id="el-time" required oninput="updateEditLogEndTime()" class="inp"></div>
+        <div><label class="lbl">Jam Selesai (+90 mnt)</label><input id="el-time-end" readonly class="inp !bg-rose-50 !border-rose-200 font-bold text-rose-700"></div>
+      </div>
+      <div><label class="lbl">Materi / Catatan Pertemuan</label><input id="el-material" required class="inp"></div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="hide('edit-log-modal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-600 cursor-pointer">Batal</button>
+        <button class="btn bg-gradient-to-r from-rose-500 to-pink-600"><i class="fa-solid fa-check"></i> Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL KONFIRMASI ==================== -->
+<div id="confirm-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[60] items-center justify-center p-4">
+  <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
+    <div class="ico w-14 h-14 mx-auto mb-3 text-xl bg-gradient-to-br from-rose-500 to-pink-600"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h3 id="confirm-title" class="font-extrabold text-lg text-slate-800"></h3>
+    <p id="confirm-msg" class="text-sm text-slate-600 mt-2 leading-relaxed"></p>
+    <div class="flex gap-3 mt-6">
+      <button type="button" onclick="closeConfirm()" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-600 cursor-pointer">Batal</button>
+      <button type="button" onclick="acceptConfirm()" class="btn flex-1 bg-gradient-to-r from-rose-500 to-pink-600">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = 'absensi_app_db_v3', SESSION_MIN = 90;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const show = id => { $(id).classList.remove('hidden'); $(id).classList.add('flex'); };
+const hide = id => { $(id).classList.add('hidden'); $(id).classList.remove('flex'); };
+
+// ---------- Waktu (Sesi 90 Menit) ----------
+const toMin = t => { const [h, m] = (t || '00:00').split(':').map(Number); return h * 60 + m; };
+const fromMin = m => { m = ((m % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+const calcEnd = start => fromMin(toMin(start) + SESSION_MIN);
+const localISO = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseDate = s => { const [y, m, d] = (s || localISO()).split('-').map(Number); return new Date(y, m - 1, d); };
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const fmtLong = s => { if (!s) return '-'; const d = parseDate(s); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+const fmtShort = s => { if (!s) return '-'; const d = parseDate(s); return `${d.getDate()}-${MONTHS[d.getMonth()].slice(0, 3)}`; };
+
+function logStart(l) {
+  if (l.startMin != null) return l.startMin;
+  const m = /(\d{1,2}):(\d{2})/.exec(l.time || '');
+  return m ? +m[1] * 60 + +m[2] : null;
+}
+function updateEndTime() { const v = $('input-time').value; $('input-time-end').value = v ? calcEnd(v) : ''; }
+function updateEditLogEndTime() { const v = $('el-time').value; $('el-time-end').value = v ? calcEnd(v) : ''; }
+
+function togglePassVisibility(inputId, btn) {
+  const inp = $(inputId);
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  btn.innerHTML = `<i class="fa-solid ${isPass ? 'fa-eye-slash' : 'fa-eye'} text-sm"></i>`;
+}
+
+// ---------- Data & Penyimpanan ----------
+const DEFAULT_DB = {
+  profile: {
+    name: 'Tedy',
+    branch: 'Kalibaru',
+    email: 'admin@sekolah.com',
+    password: 'admin123',
+    phone: '6281234567890'
+  },
+  classes: {
+    'Kelas 5 SD A': [
+      { name: 'Andi Saputra', latestMaterial: 'Pecahan Dasar' },
+      { name: 'Budi Santoso', latestMaterial: 'Pecahan Dasar' },
+      { name: 'Siti Aminah', latestMaterial: 'Pecahan Lanjutan' }
+    ],
+    'Kelas 6 SD B': [
+      { name: 'Dewi Lestari', latestMaterial: 'Aljabar Dasar' },
+      { name: 'Rizky Pratama', latestMaterial: 'Volume Bangun Ruang' }
+    ]
+  },
+  attendanceLogs: []
+};
+
+function ensureIntegrity(data) {
+  if (!data.profile) data.profile = structuredClone(DEFAULT_DB.profile);
+  if (!data.profile.password) data.profile.password = 'admin123';
+  if (!data.profile.email) data.profile.email = 'admin@sekolah.com';
+  if (!data.classes) data.classes = {};
+  if (!Array.isArray(data.attendanceLogs)) data.attendanceLogs = [];
+  data.attendanceLogs.forEach((l, idx) => {
+    if (!l.id) l.id = 'log_' + Date.now() + '_' + idx;
+  });
+  return data;
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.profile && parsed.classes) return ensureIntegrity(parsed);
+    }
+  } catch (e) {}
+  return ensureIntegrity(structuredClone(DEFAULT_DB));
+}
+
+let db = loadDB();
+
+function saveData() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(db));
+  } catch (e) {
+    toast('Gagal menyimpan data. Penyimpanan browser penuh atau diblokir.', 'err');
+  }
+}
+
+function promptResetAccount() {
+  askConfirm(
+    'Reset Akun ke Bawaan?',
+    'Email & password login akan dikembalikan ke <b>admin@sekolah.com</b> / <b>admin123</b>. Data kelas dan riwayat absen tetap aman.',
+    () => {
+      db.profile.email = 'admin@sekolah.com';
+      db.profile.password = 'admin123';
+      saveData();
+      $('login-email').value = 'admin@sekolah.com';
+      $('login-password').value = 'admin123';
+      toast('Akun berhasil direset ke bawaan.');
+    }
+  );
+}
+
+// ---------- UI Helper ----------
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-white text-sm font-semibold flex items-center gap-2.5 max-w-xs border border-white/20 ${type === 'err' ? 'bg-gradient-to-r from-rose-500 to-pink-600' : 'bg-gradient-to-r from-emerald-500 to-teal-600'}`;
+  t.innerHTML = `<i class="fa-solid ${type === 'err' ? 'fa-circle-exclamation' : 'fa-circle-check'} text-base"></i><span>${esc(msg)}</span>`;
+  $('toast-box').appendChild(t);
+  setTimeout(() => t.remove(), 3400);
+}
+
+let confirmCb = null;
+function askConfirm(title, html, cb) {
+  $('confirm-title').textContent = title;
+  $('confirm-msg').innerHTML = html;
+  confirmCb = cb;
+  show('confirm-modal');
+}
+function closeConfirm() { hide('confirm-modal'); confirmCb = null; }
+function acceptConfirm() { const cb = confirmCb; closeConfirm(); if (cb) cb(); }
+
+function toggleDrawer(id) {
+  const open = $(id).classList.toggle('hidden') === false;
+  $('icon-' + id).classList.toggle('rotate-180', open);
+}
+
+// ---------- Autentikasi & Profil ----------
+function handleLogin(e) {
+  e.preventDefault();
+  const email = $('login-email').value.trim().toLowerCase();
+  const pass = $('login-password').value;
+  const storedEmail = (db.profile.email || 'admin@sekolah.com').trim().toLowerCase();
+  const storedPass = db.profile.password || 'admin123';
+
+  if (email === storedEmail && pass === storedPass) {
+    sessionStorage.setItem('active_user_v3', email);
+    showApp();
+    toast(`Selamat datang kembali, Kak ${db.profile.name}!`);
+  } else {
+    toast('Email atau password salah! Periksa kembali atau klik Reset Akun.', 'err');
+  }
+}
+
+function handleLogout() {
+  sessionStorage.removeItem('active_user_v3');
+  hide('app-container');
+  show('login-container');
+  $('login-email').value = db.profile.email;
+  $('login-password').value = '';
+}
+
+function showApp() {
+  hide('login-container');
+  show('app-container');
+  updateHeaderInfo();
+  renderAll();
+}
+
+function updateHeaderInfo() {
+  $('header-teacher-name').textContent = db.profile.name;
+  $('header-branch').innerHTML = `<i class="fa-solid fa-location-dot mr-1 text-pink-200"></i>Cabang tetap: ${esc(db.profile.branch)}`;
+  $('welcome-greeting').textContent = `Halo, Kak ${db.profile.name}! 👋`;
+  $('input-branch').value = db.profile.branch;
+
+  let totalStu = 0;
+  Object.values(db.classes).forEach(l => totalStu += (l?.length || 0));
+  $('stat-total-class').textContent = Object.keys(db.classes).length;
+  $('stat-total-student').textContent = totalStu;
+  $('stat-total-meeting').textContent = db.attendanceLogs.length;
+}
+
+function openProfileModal() {
+  $('profile-name').value = db.profile.name;
+  $('profile-branch').value = db.profile.branch;
+  $('profile-email').value = db.profile.email;
+  $('profile-password').value = '';
+  $('profile-phone').value = db.profile.phone;
+  show('profile-modal');
+}
+
+function handleSaveProfile(e) {
+  e.preventDefault();
+  const newPass = $('profile-password').value;
+  if (newPass && newPass.length < 6) {
+    return toast('Password baru minimal 6 karakter.', 'err');
+  }
+  db.profile.name = $('profile-name').value.trim();
+  db.profile.branch = $('profile-branch').value.trim();
+  db.profile.email = $('profile-email').value.trim();
+  db.profile.phone = $('profile-phone').value.trim();
+  if (newPass) {
+    db.profile.password = newPass;
+  }
+  saveData();
+  sessionStorage.setItem('active_user_v3', db.profile.email.toLowerCase());
+  updateHeaderInfo();
+  generateReport();
+  hide('profile-modal');
+  toast(newPass ? 'Profil & password baru berhasil disimpan!' : 'Profil berhasil diperbarui.');
+}
+
+// ---------- Render All ----------
+function renderAll() {
+  updateHeaderInfo();
+  renderClasses();
+  populateDropdowns();
+  renderAttendanceStudents();
+  generateReport();
+}
+
+const CLASS_THEMES = [
+  'from-indigo-500 to-violet-600',
+  'from-emerald-500 to-teal-600',
+  'from-amber-500 to-orange-500',
+  'from-rose-500 to-pink-600',
+  'from-sky-500 to-blue-600'
+];
+
+function renderClasses() {
+  const box = $('student-list-container'), keys = Object.keys(db.classes);
+  if (!keys.length) {
+    box.innerHTML = `
+      <div class="text-center py-8 px-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60">
+        <div class="text-3xl mb-2">📚</div>
+        <p class="text-sm font-bold text-slate-600">Belum ada kelas terdaftar</p>
+        <p class="text-xs text-slate-400 mt-1">Buat kelas pertama Anda melalui formulir di atas.</p>
+      </div>`;
+    return;
+  }
+
+  box.innerHTML = keys.map((cls, cIdx) => {
+    const list = db.classes[cls], c = esc(cls);
+    const theme = CLASS_THEMES[cIdx % CLASS_THEMES.length];
+    const rows = list.length ? list.map((s, i) => `
+      <tr class="border-b border-slate-100 hover:bg-indigo-50/40 transition">
+        <td class="p-3 w-12 text-slate-400 font-semibold">${i + 1}</td>
+        <td class="p-3 font-bold text-slate-800">${esc(s.name)}</td>
+        <td class="p-3">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-semibold text-xs sm:text-sm">
+            <i class="fa-solid fa-book-bookmark text-indigo-400 text-xs"></i>
+            <span>${esc(s.latestMaterial || '-')}</span>
+          </span>
+        </td>
+        <td class="p-3 text-right whitespace-nowrap space-x-1">
+          <button type="button" data-edit-stu="1" data-cls="${c}" data-idx="${i}" title="Edit Materi Siswa" class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition cursor-pointer">
+            <i class="fa-solid fa-pen"></i> <span class="hidden sm:inline">Edit Materi</span>
+          </button>
+          <button type="button" data-del="student" data-cls="${c}" data-idx="${i}" title="Hapus Siswa" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition cursor-pointer">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </td>
+      </tr>`).join('') : '<tr><td colspan="4" class="p-5 text-center text-xs text-slate-400 italic">Belum ada siswa di kelas ini.</td></tr>';
+
+    return `
+      <div class="rounded-2xl border border-slate-200 shadow-md overflow-hidden bg-white">
+        <div class="bg-gradient-to-r ${theme} text-white px-4 py-3 flex justify-between items-center gap-2">
+          <span class="font-extrabold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-chalkboard"></i>
+            <span>${c}</span>
+            <span class="px-2.5 py-0.5 text-xs bg-white/20 rounded-full font-bold">${list.length} siswa</span>
+          </span>
+          <button type="button" data-del="class" data-cls="${c}" class="px-3 py-1.5 text-xs font-bold bg-black/20 hover:bg-rose-600 rounded-xl transition cursor-pointer">
+            <i class="fa-solid fa-trash-can mr-1"></i>Hapus Kelas
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead>
+              <tr class="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
+                <th class="p-3">No</th>
+                <th class="p-3">Nama Siswa</th>
+                <th class="p-3">Materi Terakhir</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function populateDropdowns() {
+  const keys = Object.keys(db.classes);
+  const opts = '<option value="">-- Pilih kelas --</option>' + keys.map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  ['select-class-target', 'input-class-select'].forEach(id => {
+    const el = $(id), v = el.value;
+    el.innerHTML = opts;
+    el.value = keys.includes(v) ? v : '';
+  });
+}
+
+// ---------- Edit Materi Individual Siswa ----------
+function openEditStudentModal(clsName, index) {
+  const s = (db.classes[clsName] || [])[index];
+  if (!s) return;
+  $('edit-cls-name').value = clsName;
+  $('edit-stu-idx').value = index;
+  $('edit-stu-name').value = s.name;
+  $('edit-stu-mat').value = s.latestMaterial === '-' ? '' : s.latestMaterial;
+  show('edit-student-modal');
+  setTimeout(() => $('edit-stu-mat').focus(), 80);
+}
+
+function saveStudentMaterial(e) {
+  e.preventDefault();
+  const cls = $('edit-cls-name').value, idx = +$('edit-stu-idx').value;
+  const mat = $('edit-stu-mat').value.trim();
+  if (db.classes[cls] && db.classes[cls][idx]) {
+    db.classes[cls][idx].latestMaterial = mat || '-';
+    saveData();
+    renderAll();
+    hide('edit-student-modal');
+    toast(`Materi terakhir ${db.classes[cls][idx].name} diperbarui.`);
+  }
+}
+
+// ---------- CRUD Kelas & Siswa ----------
+function addClass() {
+  const name = $('new-class-name').value.trim();
+  if (!name) return toast('Nama kelas tidak boleh kosong.', 'err');
+  if (db.classes[name]) return toast('Kelas dengan nama itu sudah ada.', 'err');
+  db.classes[name] = [];
+  saveData();
+  $('new-class-name').value = '';
+  renderAll();
+  toast('Kelas baru berhasil ditambahkan.');
+}
+
+function addStudent() {
+  const cls = $('select-class-target').value, name = $('new-student-name').value.trim();
+  if (!cls) return toast('Pilih kelas terlebih dahulu.', 'err');
+  if (!name) return toast('Nama siswa tidak boleh kosong.', 'err');
+  if (db.classes[cls].some(s => s.name.toLowerCase() === name.toLowerCase())) {
+    return toast('Siswa dengan nama itu sudah ada di kelas ini.', 'err');
+  }
+  db.classes[cls].push({ name, latestMaterial: '-' });
+  saveData();
+  $('new-student-name').value = '';
+  renderAll();
+  toast(`Siswa ditambahkan ke ${cls}.`);
+}
+
+function deleteStudent(className, studentIndex) {
+  const s = (db.classes[className] || [])[studentIndex];
+  if (!s) return;
+  askConfirm('Hapus Siswa?', `<b>${esc(s.name)}</b> akan dihapus dari <b>${esc(className)}</b>. Riwayat absen yang tersimpan tetap aman.`, () => {
+    db.classes[className].splice(studentIndex, 1);
+    saveData();
+    renderAll();
+    toast('Siswa dihapus.');
+  });
+}
+
+function deleteClass(className) {
+  if (!db.classes[className]) return;
+  askConfirm('Hapus Kelas?', `<b>${esc(className)}</b> beserta seluruh siswanya akan dihapus. Riwayat absen tetap aman.`, () => {
+    delete db.classes[className];
+    saveData();
+    renderAll();
+    toast('Kelas dihapus.');
+  });
+}
+
+$('student-list-container').addEventListener('click', e => {
+  const editBtn = e.target.closest('[data-edit-stu]');
+  if (editBtn) return openEditStudentModal(editBtn.dataset.cls, +editBtn.dataset.idx);
+  const delBtn = e.target.closest('[data-del]');
+  if (!delBtn) return;
+  delBtn.dataset.del === 'class' ? deleteClass(delBtn.dataset.cls) : deleteStudent(delBtn.dataset.cls, +delBtn.dataset.idx);
+});
+
+// ---------- Absen Harian Mengajar ----------
+const STATUS = { Hadir: 'text-emerald-600', Sakit: 'text-amber-600', Izin: 'text-indigo-600', Alfa: 'text-rose-600' };
+
+function renderAttendanceStudents() {
+  const cls = $('input-class-select').value, list = db.classes[cls] || [];
+  const mainMat = $('input-material').value.trim();
+  const box = $('dynamic-attendance-box');
+  if (!list.length) {
+    box.classList.add('hidden');
+    $('attendance-student-list').innerHTML = '';
+    return;
+  }
+  box.classList.remove('hidden');
+  $('attendance-student-list').innerHTML = list.map((s, i) => {
+    const initialMat = (s.latestMaterial && s.latestMaterial !== '-') ? s.latestMaterial : mainMat;
+    return `
+      <div class="grid md:grid-cols-12 gap-2.5 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs items-center">
+        <div class="md:col-span-4">
+          <div class="text-sm font-extrabold text-slate-800 truncate">${i + 1}. ${esc(s.name)}</div>
+          <div class="text-[11px] text-slate-400 truncate">Terakhir: <span class="text-indigo-600 font-semibold">${esc(s.latestMaterial || '-')}</span></div>
+        </div>
+        <div class="md:col-span-4 flex flex-wrap gap-x-3 gap-y-1 text-xs bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
+          ${Object.keys(STATUS).map(k => `
+            <label class="inline-flex items-center gap-1 cursor-pointer font-bold ${STATUS[k]}">
+              <input type="radio" name="status_${i}" value="${k}" ${k === 'Hadir' ? 'checked' : ''} class="accent-indigo-600">
+              <span>${k}</span>
+            </label>`).join('')}
+        </div>
+        <div class="md:col-span-4">
+          <input type="text" name="stu_mat_${i}" value="${esc(initialMat)}" placeholder="Materi khusus siswa" class="inp !py-1.5 !text-xs" title="Materi yang dipelajari siswa ini hari ini">
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function syncMainMaterialToInputs() {
+  const mainMat = $('input-material').value.trim();
+  const cls = $('input-class-select').value, list = db.classes[cls] || [];
+  list.forEach((s, i) => {
+    const inp = document.querySelector(`input[name="stu_mat_${i}"]`);
+    if (inp && (!s.latestMaterial || s.latestMaterial === '-')) {
+      inp.value = mainMat;
+    }
+  });
+}
+
+function handleSaveAttendance(e) {
+  e.preventDefault();
+  const date = $('input-date').value, start = $('input-time').value, cls = $('input-class-select').value;
+  const students = db.classes[cls];
+  if (!cls) return toast('Pilih kelas terlebih dahulu.', 'err');
+  if (!students || !students.length) return toast('Kelas ini belum memiliki siswa.', 'err');
+  if (!start) return toast('Isi jam mulai.', 'err');
+
+  const startMin = toMin(start), end = calcEnd(start);
+  const clash = db.attendanceLogs.find(l => {
+    const s = logStart(l);
+    return l.date === date && s != null && startMin < s + SESSION_MIN && s < startMin + SESSION_MIN;
+  });
+  if (clash) {
+    return toast(`Jadwal bentrok dengan sesi ${clash.time} (${clash.className}) di tanggal tersebut.`, 'err');
+  }
+
+  const materialMain = $('input-material').value.trim();
+  const customDiffs = [];
+
+  const result = students.map((st, i) => {
+    const checked = document.querySelector(`input[name="status_${i}"]:checked`);
+    const status = checked ? checked.value : 'Hadir';
+    const matInput = document.querySelector(`input[name="stu_mat_${i}"]`);
+    const studentMat = (matInput ? matInput.value.trim() : '') || materialMain;
+
+    if (status === 'Hadir') {
+      st.latestMaterial = studentMat;
+    }
+    if (studentMat !== materialMain) {
+      customDiffs.push(`${st.name}: ${studentMat}`);
+    }
+    return { name: st.name, status, material: studentMat };
+  });
+
+  const summaryMaterial = customDiffs.length
+    ? `${materialMain} [Khusus — ${customDiffs.join('; ')}]`
+    : materialMain;
+
+  db.attendanceLogs.push({
+    id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    date,
+    day: DAYS[parseDate(date).getDay()],
+    time: `${start}-${end}`,
+    startMin,
+    branch: $('input-branch').value.trim(),
+    teacher: db.profile.name,
+    className: cls,
+    material: summaryMaterial,
+    notes: $('input-notes').value.trim(),
+    students: result
+  });
+
+  saveData();
+  e.target.reset();
+  $('input-date').value = localISO();
+  $('input-time-end').value = '';
+  $('input-branch').value = db.profile.branch;
+  renderAll();
+  toast(`Absen tersimpan (${start}-${end})!`);
+}
+
+// ---------- Laporan Bulanan, Edit & Hapus Riwayat ----------
+function getFilteredLogs() {
+  const a = $('report-start').value, b = $('report-end').value;
+  return db.attendanceLogs
+    .filter(l => (!a || l.date >= a) && (!b || l.date <= b))
+    .sort((x, y) => x.date.localeCompare(y.date) || (logStart(x) ?? 0) - (logStart(y) ?? 0));
+}
+
+const reportTitle = () => `Absen ${db.profile.name}, periode ${fmtLong($('report-start').value)} - ${fmtLong($('report-end').value)}`;
+
+function generateReport() {
+  const a = $('report-start').value, b = $('report-end').value;
+  if (a && b && a > b) return toast('Tanggal mulai harus sebelum tanggal selesai.', 'err');
+  $('report-header-title').textContent = reportTitle();
+  const logs = getFilteredLogs();
+  $('report-table-body').innerHTML = logs.length ? logs.map(l => `
+    <tr class="border-b border-slate-100 hover:bg-indigo-50/40 transition">
+      <td class="p-3 text-center font-bold text-slate-700 whitespace-nowrap">${fmtShort(l.date)}</td>
+      <td class="p-3 text-center text-slate-600">${esc(l.day)}</td>
+      <td class="p-3 text-center whitespace-nowrap"><span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-xs">${esc(l.time)}</span></td>
+      <td class="p-3 text-center text-slate-600">${esc(l.branch)}</td>
+      <td class="p-3">
+        <div class="font-bold text-slate-800">${esc(l.material)}</div>
+        <div class="text-xs text-indigo-600 font-semibold mt-0.5">${esc(l.className)} (${(l.students || []).length} siswa)</div>
+        ${l.notes ? `<div class="text-[11px] text-slate-400 italic mt-0.5">"${esc(l.notes)}"</div>` : ''}
+      </td>
+      <td class="p-3 text-center whitespace-nowrap space-x-1">
+        <button type="button" onclick="openEditLogModal('${esc(l.id)}')" title="Edit Pertemuan" class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button type="button" onclick="deleteLog('${esc(l.id)}')" title="Hapus Pertemuan" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Belum ada pertemuan pada periode tanggal ini.</td></tr>';
+  $('report-footer-total').textContent = `Total terdapat ${logs.length} meeting`;
+}
+
+function openEditLogModal(id) {
+  const l = db.attendanceLogs.find(x => x.id === id);
+  if (!l) return;
+  $('edit-log-id').value = l.id;
+  $('el-date').value = l.date;
+  const startVal = (l.time || '').split('-')[0] || '08:00';
+  $('el-time').value = startVal;
+  $('el-time-end').value = calcEnd(startVal);
+  $('el-branch').value = l.branch;
+  $('el-material').value = l.material;
+  show('edit-log-modal');
+}
+
+function saveEditedLog(e) {
+  e.preventDefault();
+  const id = $('edit-log-id').value;
+  const l = db.attendanceLogs.find(x => x.id === id);
+  if (!l) return;
+
+  const newDate = $('el-date').value;
+  const start = $('el-time').value;
+  const startMin = toMin(start);
+  const end = calcEnd(start);
+
+  const clash = db.attendanceLogs.find(other => {
+    if (other.id === id) return false;
+    const s = logStart(other);
+    return other.date === newDate && s != null && startMin < s + SESSION_MIN && s < startMin + SESSION_MIN;
+  });
+  if (clash) {
+    return toast(`Jadwal bentrok dengan sesi ${clash.time} (${clash.className}).`, 'err');
+  }
+
+  l.date = newDate;
+  l.day = DAYS[parseDate(newDate).getDay()];
+  l.time = `${start}-${end}`;
+  l.startMin = startMin;
+  l.branch = $('el-branch').value.trim();
+  l.material = $('el-material').value.trim();
+
+  saveData();
+  generateReport();
+  hide('edit-log-modal');
+  toast('Riwayat pertemuan diperbarui.');
+}
+
+function deleteLog(id) {
+  askConfirm('Hapus Pertemuan?', 'Riwayat absen sesi ini akan dihapus permanen dari laporan.', () => {
+    db.attendanceLogs = db.attendanceLogs.filter(x => x.id !== id);
+    saveData();
+    renderAll();
+    toast('Riwayat pertemuan dihapus.');
+  });
+}
+
+// ---------- Backup & Restore JSON ----------
+function exportBackupJSON() {
+  const payload = {
+    app: 'AplikasiAbsensiPengajar',
+    exportedAt: new Date().toISOString(),
+    data: db
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Backup_Absensi_${db.profile.name.replace(/\s+/g, '_')}_${localISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('Backup data JSON berhasil diunduh.');
+}
+
+function importBackupJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      const imported = parsed.data ? parsed.data : parsed;
+      if (imported.profile && imported.classes && Array.isArray(imported.attendanceLogs)) {
+        askConfirm(
+          'Pulihkan Data Backup?',
+          'Data saat ini akan diganti dengan isi file backup JSON tersebut. Lanjutkan?',
+          () => {
+            db = ensureIntegrity(imported);
+            saveData();
+            renderAll();
+            toast('Data berhasil dipulihkan dari backup!');
+          }
+        );
+      } else {
+        toast('Format file backup tidak valid.', 'err');
+      }
+    } catch (err) {
+      toast('Gagal membaca file JSON.', 'err');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ---------- Ekspor Excel & WhatsApp ----------
+function exportToExcel() {
+  const logs = getFilteredLogs();
+  if (!logs.length) return toast('Tidak ada data untuk diekspor pada periode ini.', 'err');
+  const rows = [
+    [reportTitle()],
+    ['Date', 'Day', 'Time', 'Branch', 'Material & Class'],
+    ...logs.map(l => [fmtShort(l.date), l.day, l.time, l.branch, `${l.material} (${l.className})`]),
+    [`Total terdapat ${logs.length} meeting`]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows), last = rows.length - 1;
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, { s: { r: last, c: 0 }, e: { r: last, c: 4 } }];
+  ws['!cols'] = [{ wch: 11 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 44 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Laporan Absensi');
+  XLSX.writeFile(wb, `Absen_${db.profile.name.replace(/\s+/g, '_')}_${$('report-start').value}_to_${$('report-end').value}.xlsx`);
+  toast('File Excel (.xlsx) berhasil diunduh.');
+}
+
+function sendToWhatsApp() {
+  const total = getFilteredLogs().length;
+  const text = `Halo, berikut ringkasan laporan absensi pengajar:\n\n*Nama guru:* ${db.profile.name}\n*Periode:* ${fmtLong($('report-start').value)} - ${fmtLong($('report-end').value)}\n*Total meeting:* ${total} sesi\n\nFile Excel sudah diunduh di perangkat. Silakan lampirkan di chat ini. Terima kasih!`;
+  const phone = (db.profile.phone || '').replace(/\D/g, '').replace(/^0/, '62');
+  if (!phone) return toast('Isi nomor WhatsApp di profil terlebih dahulu.', 'err');
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+// ---------- Init ----------
+window.addEventListener('load', () => {
+  const today = new Date(), past = new Date();
+  past.setMonth(past.getMonth() - 1);
+  $('input-date').value = localISO(today);
+  $('report-start').value = localISO(past);
+  $('report-end').value = localISO(today);
+  if (sessionStorage.getItem('active_user_v3')) showApp();
+});
+</script>
+</body>
+</html>
